@@ -4,6 +4,8 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.CombinatoricsUtils;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by David on 28.03.2015.
@@ -85,15 +87,67 @@ public class ComplexMatrix {
 		return c;
 	}
 
+    public static ComplexMatrix multiply(ComplexMatrix a, double s)
+    {
+        return new ComplexMatrix(a.real.copy().scalarMultiply(s), a.imag.copy().scalarMultiply(s));
+    }
+
+    public static ComplexMatrix multiply(ComplexMatrix a, Complex z)
+    {
+        ComplexMatrix c = new ComplexMatrix(a.N, false);
+        c.real = a.real.copy().scalarMultiply(z.getReal()).subtract(a.imag.copy().scalarMultiply(z.getImaginary()));
+        c.imag = a.imag.copy().scalarMultiply(z.getReal()).add(a.real.copy().scalarMultiply(z.getImaginary()));
+        return c;
+    }
+
+    public static ComplexMatrix power(ComplexMatrix a, int power)
+    {
+        ComplexMatrix c;
+        if(power > 0)
+        {
+            ComplexMatrix[] array = new ComplexMatrix[power];
+            for(int i = 0; i < power; i++)
+                array[i] = a;
+
+            c = ComplexMatrix.multiply(array);
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
+        return c;
+    }
+
+    public static ComplexMatrix exponential(ComplexMatrix a, int order)
+    {
+        ComplexMatrix c = new ComplexMatrix(a.N, true);
+
+        for(int n = 0; n < order; n++)
+        {
+            c = ComplexMatrix.add(c, ComplexMatrix.multiply(ComplexMatrix.power(a, n), 1.0/CombinatoricsUtils.factorialDouble(n)));
+        }
+
+        return c;
+    }
+
 	public Complex getTrace()
 	{
 		return new Complex(real.getTrace(), imag.getTrace());
 	}
 
+    public ComplexMatrix getTranspose()
+    {
+        return new ComplexMatrix(real.copy().transpose(), imag.copy().transpose());
+    }
+
+    public ComplexMatrix getConjugate()
+    {
+        return new ComplexMatrix(real, imag.copy().scalarMultiply(-1.0));
+    }
+
 	public ComplexMatrix getHermitianConjugate()
 	{
-		// TODO: asdaosid
-		return new ComplexMatrix(real.copy().transpose(), imag.copy().scalarMultiply(-1.0).transpose());
+        return this.getTranspose().getConjugate();
 	}
 
 	public ComplexMatrix copy()

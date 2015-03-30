@@ -24,6 +24,11 @@ public class Lattice
 	 */
 	public double gridSpacing;
 
+    /*
+        Yang-Mills coupling constant
+     */
+    public double couplingConstant;
+
 	/*
 		Array of cells. A cell sits at each lattice point and contains the gauge links and momenta.
 	 */
@@ -42,10 +47,11 @@ public class Lattice
 	/*
 		Primary constructor of the Lattice class.
 	 */
-	public Lattice(int[] size, int N, double gridSpacing)
+	public Lattice(int[] size, int N, double gridSpacing, double couplingConstant)
 	{
 		this.size = size;
 		this.gridSpacing = gridSpacing;
+        this.couplingConstant = couplingConstant;
 		this.dim = size.length;
 
 		this.N = N;
@@ -87,6 +93,31 @@ public class Lattice
 
 	}
 
+    /*
+        Electric field methods
+     */
+
+    public ComplexMatrix getElectricField(Cell cell, int direction)
+    {
+        ComplexMatrix c1 = ComplexMatrix.multiply(getGaugeLink(cell, direction).getHermitianConjugate(), getGaugeLinkDerivative(cell, direction));
+        ComplexMatrix c2 = ComplexMatrix.multiply(getGaugeLinkDerivative(cell, direction), getGaugeLink(cell, direction).getHermitianConjugate());
+
+        Complex factor = new Complex(0.0, 1.0/(2.0 * couplingConstant * gridSpacing));
+
+        return ComplexMatrix.multiply(ComplexMatrix.add(c1, c2), factor);
+    }
+
+    public ComplexMatrix getElectricField(int pos[], int direction)
+    {
+        return getElectricField(getCell(pos), direction);
+    }
+
+    public ComplexMatrix getElectricField(int index, int direction)
+    {
+        return getElectricField(getCell(index), direction);
+    }
+
+
 	/*
 		Plaquette methods
 	 */
@@ -115,6 +146,33 @@ public class Lattice
 		return getPlaquette(getCell(index), i, j);
 	}
 
+    /*
+        getStaple methods
+     */
+
+    public ComplexMatrix getStaple(Cell c, int i, int j)
+    {
+        Cell c2 = getNeighbouringCell(c, i);
+        Cell c3 = getNeighbouringCell(c2, j);
+        Cell c4 = getNeighbouringCell(c3, -i);
+
+        ComplexMatrix l2 = getGaugeLink(c2, j);
+        ComplexMatrix l3 = getGaugeLink(c3, -i);
+        ComplexMatrix l4 = getGaugeLink(c4, -j);
+
+        return ComplexMatrix.multiply(new ComplexMatrix[] {l4,l3,l2});
+    }
+
+    public ComplexMatrix getStaple(int pos[], int i, int j)
+    {
+        return getStaple(getCell(pos), i, j);
+    }
+
+    public ComplexMatrix getStaple(int index, int i, int j)
+    {
+        return getStaple(getCell(index), i, j);
+    }
+
 	/*
 		getGaugeLink methods
 	 */
@@ -141,6 +199,32 @@ public class Lattice
 		return getGaugeLink(getCell(index), direction);
 	}
 
+    /*
+        getGaugeLinkDerivative methods.
+            Returns \dot{U} from momentum \Pi
+     */
+
+    public ComplexMatrix getGaugeLinkDerivative(Cell cell, int direction)
+    {
+        if(direction > 0)
+        {
+            return ComplexMatrix.multiply(cell.getMomentum(direction), Math.pow(couplingConstant, 2.0) / Math.pow(gridSpacing, dim-2)).getConjugate();
+        }
+        else
+        {
+            return ComplexMatrix.multiply(getNeighbouringCell(cell, direction).getMomentum(-direction), Math.pow(couplingConstant, 2.0) / Math.pow(gridSpacing, dim-2)).getConjugate();
+        }
+    }
+
+    public ComplexMatrix getGaugeLinkDerivative(int[] pos, int direction)
+    {
+        return getGaugeLinkDerivative(getCell(pos), direction);
+    }
+
+    public ComplexMatrix getGaugeLinkDerivative(int index, int direction)
+    {
+        return getGaugeLinkDerivative(getCell(index), direction);
+    }
 
 	/*
 		getCell methods

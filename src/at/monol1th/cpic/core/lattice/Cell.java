@@ -24,7 +24,7 @@ public class Cell {
 
 		momenta = new ComplexMatrix[d];
 		for(int i = 0; i < d; i++)
-			momenta[i] = new ComplexMatrix(N, true);
+			momenta[i] = new ComplexMatrix(N, false);
 
 		this.neighbouringCells = neighbours;
 	}
